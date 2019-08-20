@@ -177,3 +177,53 @@ ggplot(table3 %>%
 
 
 
+
+heat.nest <- sbac.all %>% 
+  filter(# `School Code`== "0000000",
+    # Grade == "13",
+    `Subgroup ID` == "1") %>%
+  mutate(OneYrChange = `Percentage Standard Met and Above.19`- `Percentage Standard Met and Above.18`,
+         FourYrChange = `Percentage Standard Met and Above.19`- `Percentage Standard Met and Above.15`)  %>% 
+  select(`District Name`,`School Name`, Grade ,TestID, starts_with("Percentage Standard Met and Above")  ,OneYrChange, FourYrChange) %>%
+  mutate(dd = `District Name`) %>%
+  group_by(`District Name`) %>%
+  nest() %>%
+  mutate(heatmap.ELA = data %>%
+           map(~ ggplot(data = .x %>%  filter(TestID == "ELA"),
+                      aes( factor( Grade)      , fct_rev( `School Name`),   fill = `Percentage Standard Met and Above.19` )) + 
+                 geom_tile(colour = "white") +
+                 geom_text(aes(label= percent( `Percentage Standard Met and Above.19`/100)), size = 3) +
+                 theme_hc() +
+                 scale_fill_gradient( low = "light yellow", high = "blue" )+
+                 theme(
+                   legend.position = "none",
+                   axis.ticks.x = element_blank(),
+                   strip.background = element_rect(fill = "black"),
+                   strip.text = element_text(colour = 'white'),
+                 ) +
+                 labs(x="Grade",
+                      y="School",
+                      title = paste0(.x$dd[1] ," ELA Percentage Meeting and Exceeding by School and Grade in 2018-19"), 
+                      subtitle="", 
+                      fill="")
+  )) %>%
+  mutate(heatmap.Math = data %>%
+           map(~ ggplot(data = .x %>%  filter(TestID == "Math"),
+                        aes( factor( Grade)      , fct_rev( `School Name`),   fill = `Percentage Standard Met and Above.19` )) + 
+                 geom_tile(colour = "white") +
+                 geom_text(aes(label= percent( `Percentage Standard Met and Above.19`/100)), size = 3) +
+                 theme_hc() +
+                 scale_fill_gradient( low = "light yellow", high = "blue" )+
+                 theme(
+                   legend.position = "none",
+                   axis.ticks.x = element_blank(),
+                   strip.background = element_rect(fill = "black"),
+                   strip.text = element_text(colour = 'white'),
+                 ) +
+                 labs(x="Grade",
+                      y="School",
+                      title = paste0(.x$dd[1] ," Math Percentage Meeting and Exceeding by School and Grade in 2018-19"), 
+                      subtitle="", 
+                      fill="")
+           ))
+
