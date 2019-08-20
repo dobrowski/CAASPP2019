@@ -5,6 +5,8 @@ library(ggrepel)
 library(ggthemes)
 library(scales)
 
+### Load files ------
+
 sbac2015 <- read_delim(here("data", "sb_ca2015_all_27_csv_v3.txt"), delim = ",") %>%
   rename_at(vars(-c("County Code", "District Code", "School Code", "Subgroup ID", "Grade", "Test Id")), ~ paste0(., ".15"))
 
@@ -23,19 +25,8 @@ sbac2019 <- read_delim(here("data", "sb_ca2019_all_27_csv_v1.txt"), delim = ",")
 
 entities <- read_delim(here("data","sb_ca2019entities_csv.txt"), delim = ",") 
 
-# sbac.all <- sbac2019 %>%
-#   left_join(sbac2018, by = c("County Code", "District Code", "School Code", "Subgroup ID", "Grade", "Test Id"), suffix = c(".19", ".18"))  %>%
-#   left_join(sbac2017, by = c("County Code", "District Code", "School Code", "Subgroup ID", "Grade", "Test Id"), suffix = c("", ".17")) %>%
-#   left_join(sbac2016, by = c("County Code", "District Code", "School Code", "Subgroup ID", "Grade", "Test Id"), suffix = c("", ".16")) %>%
-#   left_join(sbac2015, by = c("County Code", "District Code", "School Code", "Subgroup ID", "Grade", "Test Id"), suffix = c("", ".15")) %>%
-#   left_join(entities, by = c("County Code", "District Code", "School Code")) %>%
-#   mutate(TestID = `Test Id` %>% recode(  `1`= "ELA" , `2` = "Math"   )) %>%
-#   mutate_at(vars(`Total Tested At Entity Level.19`:`Area 4 Percentage Below Standard.15`), list(as.numeric)) %>%
-#   mutate(`District Name` = case_when(`District Code` == "00000" ~ "Monterey County",
-#                                      TRUE ~ `District Name`)) %>%
-#   mutate(`School Name` = case_when(`District Code` == "00000" & `School Code` == "0000000" ~ "Monterey County",
-#                                    `School Code` == "0000000" ~ "District",
-#                                      TRUE ~ `District Name`))
+
+###  Merge files and massage -----
 
 sbac.all <- list(sbac2019, sbac2018, sbac2017, sbac2016, sbac2015) %>%
   reduce(left_join, by = c("County Code", "District Code", "School Code", "Subgroup ID", "Grade", "Test Id") )%>%
@@ -59,18 +50,18 @@ filtered <- sbac.all %>%
            PercTotalScored = (as.numeric(`Total Tested with Scores.19`) - as.numeric(`Total Tested with Scores.18`))*100/ as.numeric(`Total Tested with Scores.18`)) 
            
 
-
-table <- filtered %>% 
-    select(`District Name`,`School Name`, TestID, OneYrChange) %>%
-    spread(key = TestID, value = OneYrChange) # %>%
-  #  select(`District Name`,`School Name`, "ELA" = `1`, "Math" = `2`)
+# 
+# table <- filtered %>% 
+#     select(`District Name`,`School Name`, TestID, OneYrChange) %>%
+#     spread(key = TestID, value = OneYrChange) # %>%
+#   #  select(`District Name`,`School Name`, "ELA" = `1`, "Math" = `2`)
 
 table2 <- filtered %>% 
   select(`District Name`,`School Name`, TestID, starts_with("Percentage Standard Met and Above")  ,OneYrChange, FourYrChange)
   
 
 
-write_csv(table, "Preliminary Change in Percent Met or Exceeded by District.csv")
+# write_csv(table, "Preliminary Change in Percent Met or Exceeded by District.csv")
 
 
 
@@ -108,22 +99,31 @@ What do we want to know?
 graphthis <- table2 %>% 
   filter(TestID == "ELA") %>%
   select(`District Name`, starts_with("Percentag")) %>%
-  gather(key = "Year", value = "Percent", -`District Name`)
+  gather(key = "Year", value = "Percent", -`District Name`) %>%
+  mutate(Year = Year %>% recode("Percentage Standard Met and Above.15" = "2015" ,
+                                "Percentage Standard Met and Above.16" = "2016",
+                                "Percentage Standard Met and Above.17" = "2017",
+                                "Percentage Standard Met and Above.18" = "2018",
+                                "Percentage Standard Met and Above.19" = "2019"))
 
   
 ggplot(data = graphthis, aes(x = Year, y = Percent, group = `District Name`)) +
   geom_line(aes(color = `District Name`, alpha = 1), size = 1) +
   #  geom_point(aes(color = Type, alpha = .1), size = 4) +
-  geom_text_repel(data = graphthis %>% filter(Year == "Percentage Standard Met and Above.15"), 
+  geom_text_repel(data = graphthis %>% filter(Year == "2015"), 
                   aes(label = `District Name`) , 
                   hjust = "left", 
+                  segment.size = .2,
+                  segment.color = "grey",
   #                fontface = "bold", 
                   size = 3, 
                   nudge_x = -.45, 
                   direction = "y") +
-  geom_text_repel(data = graphthis %>% filter(Year == "Percentage Standard Met and Above.19"), 
+  geom_text_repel(data = graphthis %>% filter(Year == "2019"), 
                   aes(label = `District Name`) , 
                   hjust = "right", 
+                  segment.size = .2,
+                  segment.color = "grey",
                   fontface = "bold", 
                   size = 3, 
                   nudge_x = .5, 
