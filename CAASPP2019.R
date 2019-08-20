@@ -1,6 +1,9 @@
 
 library(tidyverse)
 library(here)
+library(ggrepel)
+library(ggthemes)
+library(scales)
 
 sbac2015 <- read_delim(here("data", "sb_ca2015_all_27_csv_v3.txt"), delim = ",") %>%
   rename_at(vars(-c("County Code", "District Code", "School Code", "Subgroup ID", "Grade", "Test Id")), ~ paste0(., ".15"))
@@ -48,7 +51,7 @@ sbac.all <- list(sbac2019, sbac2018, sbac2017, sbac2016, sbac2015) %>%
 
 
 filtered <- sbac.all %>% 
-    filter(# `School Code`== "0000000",
+    filter( `School Code`== "0000000",
            Grade == "13",
            `Subgroup ID` == "1") %>%
   mutate(OneYrChange = `Percentage Standard Met and Above.19`- `Percentage Standard Met and Above.18`,
@@ -97,3 +100,80 @@ What do we want to know?
   Who improved? 
   Who is the highest? 
   
+  
+  
+  
+  ####  Slopegraph ---- 
+
+graphthis <- table2 %>% 
+  filter(TestID == "ELA") %>%
+  select(`District Name`, starts_with("Percentag")) %>%
+  gather(key = "Year", value = "Percent", -`District Name`)
+
+  
+ggplot(data = graphthis, aes(x = Year, y = Percent, group = `District Name`)) +
+  geom_line(aes(color = `District Name`, alpha = 1), size = 1) +
+  #  geom_point(aes(color = Type, alpha = .1), size = 4) +
+  geom_text_repel(data = graphthis %>% filter(Year == "Percentage Standard Met and Above.15"), 
+                  aes(label = `District Name`) , 
+                  hjust = "left", 
+  #                fontface = "bold", 
+                  size = 3, 
+                  nudge_x = -.45, 
+                  direction = "y") +
+  geom_text_repel(data = graphthis %>% filter(Year == "Percentage Standard Met and Above.19"), 
+                  aes(label = `District Name`) , 
+                  hjust = "right", 
+                  fontface = "bold", 
+                  size = 3, 
+                  nudge_x = .5, 
+                  direction = "y") +
+  geom_label(aes(label = Percent), 
+             size = 2.5, 
+             label.padding = unit(0.05, "lines"), 
+             label.size = 0.0) +
+  scale_x_discrete(position = "top") +
+  theme_hc() +  # Remove the legend
+  theme(legend.position = "none") 
+
+
+
+#### Heatmap -----
+
+
+table3 <- sbac.all %>% 
+  filter(# `School Code`== "0000000",
+         # Grade == "13",
+          `Subgroup ID` == "1") %>%
+  mutate(OneYrChange = `Percentage Standard Met and Above.19`- `Percentage Standard Met and Above.18`,
+         FourYrChange = `Percentage Standard Met and Above.19`- `Percentage Standard Met and Above.15`)  %>% 
+  select(`District Name`,`School Name`, Grade ,TestID, starts_with("Percentage Standard Met and Above")  ,OneYrChange, FourYrChange)
+
+
+
+ggplot(table3 %>%
+         filter(TestID == "ELA",
+                str_detect(`District Name`, "Alisal") ),
+       aes( factor( Grade)      , fct_rev( `School Name`),   fill = `Percentage Standard Met and Above.19` )) + 
+  geom_tile(colour = "white") +
+  geom_text(aes(label= percent( `Percentage Standard Met and Above.19`/100)), size = 3) +
+ # scale_x_discrete(labels = xlabs) +
+  theme_hc() +
+  scale_fill_gradient( low = "light yellow", high = "blue" )+
+  theme(
+    legend.position = "none",
+    axis.ticks.x = element_blank(),
+    strip.background = element_rect(fill = "black"),
+    strip.text = element_text(colour = 'white'),
+ #   axis.text.x = element_text(angle = 45, hjust = 1)
+  ) +
+  labs(x="Grade",
+       y="School",
+       title = paste0("ELA Percentage Meeting and Exceeding by School and Grade in 2018-19"), 
+       subtitle="", 
+       fill="")
+
+
+
+
+
