@@ -84,17 +84,19 @@ descreasing <- sbac.all %>%
           Grade == "Overall",
           `Subgroup ID` == "1") %>%
   select(`District Name`,`School Name`, TestID, starts_with("Percentage Standard Met and Above")  ,OneYrChange, FourYrChange) %>%
-  filter(OneYrChange < 0)
+  filter(OneYrChange < 0) %>%
+  mutate(descreasing = paste0(`District Name`,TestID))
 
 
 background <- sbac.all %>% 
-  filter(`District Name` %in% descreasing$`District Name`,
+  mutate(drop = paste0(`District Name`,TestID)) %>%
+  filter(drop %in% descreasing$descreasing,
     `School Code` != "0000000",
      #     Grade == "Overall",
           `Subgroup ID` == "1") %>%
   select(`District Name`,`School Name`, TestID,Grade ,starts_with("Percentage Standard Met and Above")  ,OneYrChange, FourYrChange) %>%
   group_by(`District Name`) %>%
-  mutate(single = if_else( n() == 14, TRUE, FALSE )  ) %>%
+  mutate(single = if_else( n() %in% c(7,14) , TRUE, FALSE )  ) %>%
   ungroup() %>%
   filter(single == FALSE & Grade == "Overall" | single == TRUE )
 
