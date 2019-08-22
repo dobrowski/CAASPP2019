@@ -63,7 +63,10 @@ table2 <- filtered %>%
 
 ### Districts above California -----
 
-above.CA <- filtered %>% 
+above.CA <- sbac.all %>% 
+  filter( `School Code`== "0000000",
+          Grade == "Overall",
+          `Subgroup ID` == "1")  %>% 
   select(`District Name`, TestID, `Percentage Standard Met and Above.19`) %>%
   spread(key = TestID, value = `Percentage Standard Met and Above.19`) %>%
   filter(ELA > 50,
@@ -74,6 +77,149 @@ above.CA <- filtered %>%
 clipr::write_clip(above.CA$Sentence)
 
 
+
+
+growth.1yr <- sbac.all %>% 
+  filter(# `School Code`== "0000000",
+          Grade == "Overall",
+          `Subgroup ID` == "1")  %>% 
+  select(`District Name`, `School Name`, TestID, `Percentage Standard Met and Above.19`,`Percentage Standard Met and Above.18`, OneYrChange) %>%
+#  spread(key = TestID, value = `Percentage Standard Met and Above.19`) %>%
+  filter(OneYrChange > 10 ) %>% 
+  filter(!str_detect(`School Name`, "Graves|San Antonio|Uplift") ) %>%
+  mutate(Sentence = if_else(str_detect(`School Name`, "District") ,
+                             paste0( `District Name`, " School District grew ",
+                           round(OneYrChange, digits = 1), " percentage points in ", TestID,
+                           " from ", round(`Percentage Standard Met and Above.18`, digits = 1), " percent to ",
+                           round(`Percentage Standard Met and Above.19`, digits = 1)," percent."  ),
+                           paste0(`School Name`," in " , `District Name`, " grew ",
+                                   round(OneYrChange, digits = 1), " percentage points in ", TestID,
+                                   " from ", round(`Percentage Standard Met and Above.18`, digits = 1), " percent to ",
+                                   round(`Percentage Standard Met and Above.19`, digits = 1)," percent."  )
+                           ))         %>%
+  arrange(desc(OneYrChange))
+
+clipr::write_clip(growth.1yr$Sentence)
+
+
+
+growth.4yr <- sbac.all %>% 
+  filter(# `School Code`== "0000000",
+    Grade == "Overall",
+    `Subgroup ID` == "1")  %>% 
+  select(`District Name`, `School Name`, TestID, `Percentage Standard Met and Above.19`,`Percentage Standard Met and Above.15`, FourYrChange) %>%
+  #  spread(key = TestID, value = `Percentage Standard Met and Above.19`) %>%
+  filter(FourYrChange > 20 ) %>% 
+  filter(!str_detect(`School Name`, "Graves|San Antonio|Uplift|San Lucas|Chualar|Lagunita") ) %>%
+  mutate(Sentence = if_else(str_detect(`School Name`, "District") ,
+                            paste0( `District Name`, " School District grew ",
+                                    round(FourYrChange, digits = 1), " percentage points in ", TestID,
+                                    " from ", round(`Percentage Standard Met and Above.15`, digits = 1), " percent to ",
+                                    round(`Percentage Standard Met and Above.19`, digits = 1)," percent."  ),
+                            paste0(`School Name`," in " , `District Name`, " grew ",
+                                   round(FourYrChange, digits = 1), " percentage points in ", TestID,
+                                   " from ", round(`Percentage Standard Met and Above.15`, digits = 1), " percent to ",
+                                   round(`Percentage Standard Met and Above.19`, digits = 1)," percent."  )
+  ))         %>%
+  arrange(desc(FourYrChange))
+
+clipr::write_clip(growth.4yr$Sentence)
+
+
+
+#### Press Release Data Tables ------
+
+# Grade ELA
+
+pr1 <- sbac.all %>% 
+  filter( `District Name` == "Monterey County",
+          #  `School Code`== "0000000",
+          #       Grade == "Overall",
+          `Subgroup ID` == "1") %>%
+  select(Grade, TestID, starts_with("Percentage Standard Met and Above")  ,OneYrChange, FourYrChange) %>% 
+  filter(TestID == "ELA") %>%
+  transmute(Grade = Grade,
+    `2015` = round(`Percentage Standard Met and Above.15`,digits = 1 ), 
+         `2016` = round(`Percentage Standard Met and Above.16`,digits = 1 ), 
+         `2017` = round(`Percentage Standard Met and Above.17`,digits = 1 ), 
+         `2018` = round(`Percentage Standard Met and Above.18`,digits = 1 ), 
+         `2019` = round(`Percentage Standard Met and Above.19`,digits = 1 ), 
+    `1 Year Growth` = round(OneYrChange,digits = 1 ),
+    `4 Year Growth` = round(FourYrChange,digits = 1 ),
+  )
+
+clipr::write_clip(pr1)
+
+
+# Grade Math
+
+pr2 <- sbac.all %>% 
+  filter( `District Name` == "Monterey County",
+          #  `School Code`== "0000000",
+          #       Grade == "Overall",
+          `Subgroup ID` == "1") %>%
+  select(Grade, TestID, starts_with("Percentage Standard Met and Above")  ,OneYrChange, FourYrChange) %>% 
+  filter(TestID == "Math") %>%
+  transmute(Grade = Grade,
+            `2015` = round(`Percentage Standard Met and Above.15`,digits = 1 ), 
+            `2016` = round(`Percentage Standard Met and Above.16`,digits = 1 ), 
+            `2017` = round(`Percentage Standard Met and Above.17`,digits = 1 ), 
+            `2018` = round(`Percentage Standard Met and Above.18`,digits = 1 ), 
+            `2019` = round(`Percentage Standard Met and Above.19`,digits = 1 ), 
+            `1 Year Growth` = round(OneYrChange,digits = 1 ),
+            `4 Year Growth` = round(FourYrChange,digits = 1 ),
+  )
+
+clipr::write_clip(pr2)
+
+
+# Subgroup ELA
+
+pr3 <- sbac.all %>% 
+  filter( `District Name` == "Monterey County",
+          #  `School Code`== "0000000",
+                 Grade == "Overall",
+          # `Subgroup ID` == "1"
+          ) %>%
+  select(`Student Group`, `Demographic Name` , TestID, starts_with("Percentage Standard Met and Above")  ,OneYrChange, FourYrChange) %>% 
+  filter(TestID == "ELA") %>%
+  transmute(`Student Group` = `Student Group`,
+            `Demographic Name` = `Demographic Name`,
+            `2015` = round(`Percentage Standard Met and Above.15`,digits = 1 ), 
+            `2016` = round(`Percentage Standard Met and Above.16`,digits = 1 ), 
+            `2017` = round(`Percentage Standard Met and Above.17`,digits = 1 ), 
+            `2018` = round(`Percentage Standard Met and Above.18`,digits = 1 ), 
+            `2019` = round(`Percentage Standard Met and Above.19`,digits = 1 ), 
+            `1 Year Growth` = round(OneYrChange,digits = 1 ),
+            `4 Year Growth` = round(FourYrChange,digits = 1 ),
+  ) %>%
+  arrange(`Student Group`, `2019`)
+
+clipr::write_clip(pr3)
+
+# Subgroup Math
+
+pr4 <- sbac.all %>% 
+  filter( `District Name` == "Monterey County",
+          #  `School Code`== "0000000",
+          Grade == "Overall",
+          # `Subgroup ID` == "1"
+  ) %>%
+  select(`Student Group`, `Demographic Name` , TestID, starts_with("Percentage Standard Met and Above")  ,OneYrChange, FourYrChange) %>% 
+  filter(TestID == "Math") %>%
+  transmute(`Student Group` = `Student Group`,
+            `Demographic Name` = `Demographic Name`,
+            `2015` = round(`Percentage Standard Met and Above.15`,digits = 1 ), 
+            `2016` = round(`Percentage Standard Met and Above.16`,digits = 1 ), 
+            `2017` = round(`Percentage Standard Met and Above.17`,digits = 1 ), 
+            `2018` = round(`Percentage Standard Met and Above.18`,digits = 1 ), 
+            `2019` = round(`Percentage Standard Met and Above.19`,digits = 1 ), 
+            `1 Year Growth` = round(OneYrChange,digits = 1 ),
+            `4 Year Growth` = round(FourYrChange,digits = 1 ),
+  ) %>%
+  arrange(`Student Group`, `2019`)
+
+clipr::write_clip(pr4)
 # write_csv(table, "Preliminary Change in Percent Met or Exceeded by District.csv")
 
 
@@ -184,6 +330,9 @@ ggplot(data = graphthis %>% filter(Year %in% c("2017","2018", "2019")) , aes(x =
   labs(title = "Change on Math over three years for all districts in Monterey County",
        x = "")
 
+
+ggsave(here("figs","Change on Math over three years for all districts in Monterey County.png"), width = 7, height = 8)
+
 ## Slopegraph countywide by grade
 
 graphthis <- sbac.all %>% 
@@ -191,10 +340,6 @@ graphthis <- sbac.all %>%
   #  `School Code`== "0000000",
    #       Grade == "Overall",
           `Subgroup ID` == "1") %>%
-  mutate(OneYrChange = `Percentage Standard Met and Above.19`- `Percentage Standard Met and Above.18`,
-         FourYrChange = `Percentage Standard Met and Above.19`- `Percentage Standard Met and Above.15`,
-      #   PercTotalScored = (as.numeric(`Total Tested with Scores.19`) - as.numeric(`Total Tested with Scores.18`))*100/ as.numeric(`Total Tested with Scores.18`)
-         ) %>% 
   select(Grade, TestID, starts_with("Percentage Standard Met and Above")  ,OneYrChange, FourYrChange) %>% 
   filter(TestID == "ELA") %>%
   gather(key = "Year", value = "Percent", -Grade) %>%
@@ -239,7 +384,7 @@ ggplot(data = graphthis %>% filter(Year %in% c("2018", "2019")), aes(x = Year, y
        y = "Percent Meeting or Exceeding Standard by Grade",
        x = "")
 
-
+ggsave(here("figs","Most grades in Monterey County showed improvement\n from 17-18 to 18-19 on ELA.png"), width = 7, height = 8)
 
 ## Slopegraph countywide by subgroup
 
@@ -294,9 +439,99 @@ ggplot(data = graphthis %>% filter(Year %in% c("2018", "2019")), aes(x = Year, y
   theme(axis.ticks       = element_blank()) +
   scale_x_discrete(position = "top") +
   theme(legend.position = "none") +
-  labs(title = "Most grades in Monterey County showed improvement\n from 17-18 to 18-19 on Math",
+  labs(title = "Students regardless of Parent Education in Monterey County showed improvement from 17-18 to 18-19 on Math",
        y = "Percent Meeting or Exceeding Standard by Subgroup",
        x = "")
+
+ggsave(here("figs","Students regardless of Parent Education in Monterey County showed improvement from 17-18 to 18-19 on Math.png"), width = 7, height = 8)
+
+
+## Slopegraph formula
+
+slopegraph <- function(df, groupie, test, title){ 
+
+ggplot(data = df %>% filter(Year %in% c("2018", "2019")), aes(x = Year, y = Percent, group = {{groupie}})) +
+  geom_line(aes(color = {{groupie}}, alpha = 1), size = 1) +
+  geom_text_repel(data = df %>% filter(Year == "2018"), 
+                  aes(label = {{groupie}}) , 
+                  hjust = "left", 
+                  segment.size = .2,
+                  segment.color = "grey",
+                  size = 3, 
+                  nudge_x = -.4, 
+                  direction = "y") +
+  geom_text_repel(data = df %>% filter(Year == "2019"), 
+                  aes(label = {{groupie}}) , 
+                  hjust = "right", 
+                  segment.size = .2,
+                  segment.color = "grey",
+                  fontface = "bold", 
+                  size = 3, 
+                  nudge_x = .4, 
+                  direction = "y") +
+  geom_label(aes(label = Percent), 
+             size = 2.5, 
+             label.padding = unit(0.05, "lines"), 
+             label.size = 0.0) +
+  theme_hc() +  # Remove the legend
+  theme(axis.text.y      = element_blank()) +
+  theme(panel.grid.major.y = element_blank()) +
+  theme(panel.grid.minor.y = element_blank()) +
+  theme(axis.ticks       = element_blank()) +
+  scale_x_discrete(position = "top") +
+  theme(legend.position = "none") +
+  labs(title = title, 
+       y = paste0("Percent Meeting or Exceeding Standard"  ),
+       x = "")
+
+}
+
+
+graphthis <- sbac.all %>% 
+  filter( `District Name` == "Monterey County",
+          #  `School Code`== "0000000",
+          Grade == "Overall",
+          #`Subgroup ID` == "1"
+          ) %>%
+  select(`Demographic Name`,`Student Group`, TestID, starts_with("Percentage Standard Met and Above")  ,OneYrChange, FourYrChange) %>% 
+  filter(TestID == "Math",
+         `Student Group` == "Parent Education") %>%    #  Change this name for other subgroups 
+  gather(key = "Year", value = "Percent", -`Demographic Name`) %>%
+  mutate(Year = Year %>% recode("Percentage Standard Met and Above.15" = "2015" ,
+                                "Percentage Standard Met and Above.16" = "2016",
+                                "Percentage Standard Met and Above.17" = "2017",
+                                "Percentage Standard Met and Above.18" = "2018",
+                                "Percentage Standard Met and Above.19" = "2019"),
+         Percent = as.numeric(Percent))%>%
+  mutate(demo = `Demographic Name`)
+
+slopegraph(df = graphthis, groupie = demo, test = "Math", title = "All students improved on Math regardless of parents' level of education")
+
+ggsave(here("figs","Students regardless of Parent Education in Monterey County showed improvement from 17-18 to 18-19 on Math.png"), width = 7, height = 8)
+
+
+
+graphthis <- sbac.all %>% 
+  filter( `District Name` == "Monterey County",
+          #  `School Code`== "0000000",
+          Grade == "Overall",
+          #`Subgroup ID` == "1"
+  ) %>%
+  select(`Demographic Name`,`Student Group`, TestID, starts_with("Percentage Standard Met and Above")  ,OneYrChange, FourYrChange) %>% 
+  filter(TestID == "Math",
+         `Student Group` == "Ethnicity") %>%    #  Change this name for other subgroups 
+  gather(key = "Year", value = "Percent", -`Demographic Name`) %>%
+  mutate(Year = Year %>% recode("Percentage Standard Met and Above.15" = "2015" ,
+                                "Percentage Standard Met and Above.16" = "2016",
+                                "Percentage Standard Met and Above.17" = "2017",
+                                "Percentage Standard Met and Above.18" = "2018",
+                                "Percentage Standard Met and Above.19" = "2019"),
+         Percent = as.numeric(Percent))%>%
+  mutate(demo = `Demographic Name`)
+
+slopegraph(df = graphthis, groupie = demo, test = "Math", title = "Most students improved on Math regardless of Race/Ethnicity")
+
+ggsave(here("figs","Students regardless of Ethnicity in Monterey County showed improvement from 17-18 to 18-19 on Math.png"), width = 7, height = 8)
 
 
 
