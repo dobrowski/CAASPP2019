@@ -4,6 +4,7 @@ library(here)
 library(ggrepel)
 library(ggthemes)
 library(scales)
+library(readxl)
 
 ### Load files ------
 
@@ -27,6 +28,50 @@ entities <- read_delim(here("data","sb_ca2019entities_csv.txt"), delim = ",")
 
 subgroups <- read_delim(here("data","Subgroups.txt"), delim = ",") 
 
+
+
+
+
+
+
+EL.schools <-read.delim(here("data",  "LtelDownload1819.txt"))
+
+EL.schools <- EL.schools %>% 
+  mutate_at(vars(ends_with("Code")), funs(as.double(.) ) ) %>%
+  mutate_at(vars(ends_with("Code")), funs(if_else( is.na(.), 0, .) ) ) %>%
+  # filter(str_detect(SchoolName, "Monte Bella")) %>%
+  mutate(cds = str_c( str_pad(  as.character(CountyCode) , width = 2, side = "left", pad = "0"  ) ,
+                      str_pad(  as.character(DistrictCode), width = 5, side = "left", pad = "0"  ) ,
+                      str_pad( as.character(SchoolCode), width = 7, side = "left", pad = "0"  )  )
+  ) %>%  # current EL
+  filter(Gender == "ALL") %>%
+  #        filter(str_detect(CountyName , "Monterey") ) %>%
+  group_by(cds) %>%
+  mutate(sumEL = sum(EL),
+         sumTotal = sum(TotalEnrollment),
+         ELpercent = sumEL/sumTotal) %>%
+  select(CountyCode,DistrictCode,SchoolCode,DistrictName,SchoolName, Charter, cds, ELpercent) %>%
+  ungroup() %>%
+  distinct() 
+
+
+frpm <- read_excel(here("data", "frpm1819.xlsx"), sheet = "FRPM School-Level Data ", range = "A2:AB10477") %>% 
+  mutate(cds = str_c(`County Code`,`District Code`,`School Code`)) %>%
+  select(`County Code`,`District Code`,`School Code`, cds, starts_with("Percent"), `High Grade`   ) %>%
+  select(cds, 6, `High Grade` ) 
+
+colnames(frpm) <- (c("cds", "frpm", "highgrade"))
+
+
+school.EL.FRPM <- EL.schools %>% left_join(frpm) # %>% mutate(cds = as.numeric(cds))
+
+
+
+
+
+
+
+
 ###  Merge files and massage -----
 
 sbac.all <- list(sbac2019, sbac2018, sbac2017, sbac2016, sbac2015) %>%
@@ -45,6 +90,9 @@ sbac.all <- list(sbac2019, sbac2018, sbac2017, sbac2016, sbac2015) %>%
   mutate(OneYrChange = `Percentage Standard Met and Above.19`- `Percentage Standard Met and Above.18`,
          FourYrChange = `Percentage Standard Met and Above.19`- `Percentage Standard Met and Above.15`)
 
+
+write_rds(sbac.all, here("data", "sbac-all.rds"))
+
 ### Selecting part of the file -----
 
 filtered <- sbac.all %>% 
@@ -58,8 +106,11 @@ filtered <- sbac.all %>%
 #   #  select(`District Name`,`School Name`, "ELA" = `1`, "Math" = `2`)
 
 table2 <- filtered %>% 
-  select(`District Name`,`School Name`, TestID, starts_with("Percentage Standard Met and Above")  ,OneYrChange, FourYrChange)
+  select(`District Name`,`School Name`, TestID, starts_with("Percentage Standard Met and Above")  ,OneYrChange, FourYrChange) %>%
+  arrange(desc(`School Name`) ,`District Name`, TestID)
   
+
+
 
 ### Districts above California -----
 
@@ -244,10 +295,11 @@ background <- sbac.all %>%
   group_by(`District Name`) %>%
   mutate(single = if_else( n() %in% c(7,14) , TRUE, FALSE )  ) %>%
   ungroup() %>%
-  filter(single == FALSE & Grade == "Overall" | single == TRUE )
+  filter(single == FALSE & Grade == "Overall" | single == TRUE ) %>%
+  arrange(`District Name`,TestID,`School Name`, Grade, desc(`Percentage Standard Met and Above.19`) )
 
 
-
+write_excel_csv(background,"Districts with Decrease.xls")
 
 
 ### Nesting -----
@@ -627,4 +679,77 @@ heat.nest <- sbac.all %>%
                       subtitle="", 
                       fill="Legend")
            ))
+
+#### Math ------
+
+
+
+### Selecting part of the file -----
+
+filtered <- sbac.all %>% 
+  filter( `School Code` != "0000000",
+          Grade == "Overall",
+          `Subgroup ID` == "1",
+          TestID == "Math") %>%
+  mutate(cds = str_c( str_pad(  as.character(`County Code`) , width = 2, side = "left", pad = "0"  ) ,
+                      str_pad(  as.character(`District Code`), width = 5, side = "left", pad = "0"  ) ,
+                      str_pad( as.character(`School Code`), width = 7, side = "left", pad = "0"  )  )
+  ) %>%
+  left_join(school.EL.FRPM, by = c("cds" = "cds")) 
+
+
+# 
+# table <- filtered %>% 
+#     select(`District Name`,`School Name`, TestID, OneYrChange) %>%
+#     spread(key = TestID, value = OneYrChange) # %>%
+#   #  select(`District Name`,`School Name`, "ELA" = `1`, "Math" = `2`)
+
+table2 <- filtered %>%
+  mutate(ThreeYrChange = `Percentage Standard Met and Above.19`- `Percentage Standard Met and Above.16`) %>%
+ #  filter(OneYrChange > 0) %>%
+  select(`District Name`,`School Name`, TestID, Charter, ELpercent, frpm , `Percentage Standard Met and Above.19` , OneYrChange, ThreeYrChange) %>%
+  filter(ThreeYrChange >14,
+         Charter == "N") %>%
+  mutate(ELpercent = round(ELpercent *100, 1),
+         frpm = round(frpm *100, 1) ) %>%
+  arrange(desc(ThreeYrChange) ,`District Name`, TestID)
+
+
+table3 <- filtered %>% 
+  mutate(TwoYrChange = `Percentage Standard Met and Above.19`- `Percentage Standard Met and Above.17`) %>%
+  filter(TwoYrChange >0,
+         str_detect(`School Name`, "High"),
+         !str_detect(`School Name`, "Highland")) %>%
+  #  filter(OneYrChange > 0) %>%
+  select(`District Name`,`School Name`, TestID, frpm, ELpercent, starts_with("Percentage Standard Met and Above")  ,OneYrChange, TwoYrChange) %>%
+  arrange(desc(TwoYrChange) ,`District Name`, TestID)
+
+
+temp <- sbac.all %>%
+  filter(Grade == "11",
+         `Subgroup ID` == "1",
+         str_detect(`District Name`, "Salinas"),
+         str_detect(`School Name`, "District")) 
+  
+
+
+
+
+write_csv(table2, "Schools with positive three year change in Math more than 14.csv")
+
+
+
+write_csv(table3, "High Schools with  positive two year change in Math.csv")
+### Af-Am ------
+
+
+AfAm <- sbac.all %>% 
+  filter( #`School Code`== "0000000",
+#    Grade == "11",
+    `Subgroup ID` == "74",
+    `Percentage Standard Exceeded.19` >= 1
+#    TestID == "Math",
+    ) 
+
+
 
