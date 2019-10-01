@@ -9,7 +9,7 @@ library(scales)
 sbac.all <- read_rds( here("data", "sbac-all.rds"))
 
 
-test <-     "ELA" # "Math" #
+test <-      "ELA" #  "Math" #
 folder <- "alldistricts"
 placename <- "Monterey County"
 
@@ -27,7 +27,7 @@ bk.nest <- sbac.all %>%
                                   "Percentage Standard Met and Above.17" = "2017",
                                   "Percentage Standard Met and Above.18" = "2018",
                                   "Percentage Standard Met and Above.19" = "2019")) %>%
-    mutate(cohort = as.numeric(Year) - as.numeric(Grade)) %>% 
+    mutate(cohort = as.numeric(Year) - as.numeric(as.character(Grade))) %>% 
     mutate(graphname = `District Name`) %>%
     group_by(`District Code`, graphname) %>%
     nest()
@@ -68,7 +68,7 @@ bk.nest <- bk.nest %>%
     theme(axis.ticks       = element_blank()) +
     scale_x_discrete(position = "top") +
     theme(legend.position = "none") +
-    labs(title = paste0(test," Percentage Met or Exceeded Standards Over Five Years for ", .y ),
+    labs(title = paste0(test," Percentage Met or Exceeded Standards \nOver Five Years for ", .y ),
          x = "",
          y= "Percentage Met or Exceeded Standards")
 ),
@@ -104,7 +104,7 @@ graph.cohort = data %>%
                     theme(axis.ticks       = element_blank()) +
                     scale_x_discrete(position = "top") +
                     theme(legend.position = "none") +
-                    labs(title = paste0(test," Percentage Met or Exceeded Standards by Cohort Over Five Years for ", .y ),
+                    labs(title = paste0(test," Percentage Met or Exceeded Standards by Cohort \nOver Five Years for ", .y ),
                          x = "",
                          y= "Percentage Met or Exceeded Standards")
            ),

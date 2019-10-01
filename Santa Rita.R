@@ -9,13 +9,13 @@ library(scales)
  
 
 
-test <-    "Math" # "ELA" # 
-folder <- "county"
-placename <- "Monterey County"
+test <-   "Math" #  "ELA" # 
+folder <- "test2"
+placename <- "San Antonio"
 
 
 bk <- sbac.all %>% 
-    filter(`District Code` == "00000",
+    filter(`District Code` == "66167",
         `School Code` ==   "0000000"    , # "6102925" ,    #"0122911",
         TestID == test) %>%
     mutate(Grade = factor(Grade, levels = c("3","4","5","6","7","8","11","Overall")))
@@ -86,7 +86,7 @@ graphthis <- bk %>%
                                   "Percentage Standard Met and Above.17" = "2017",
                                   "Percentage Standard Met and Above.18" = "2018",
                                   "Percentage Standard Met and Above.19" = "2019")) %>%
-    mutate(cohort = as.numeric(Year) - as.numeric(Grade))
+    mutate(cohort = as.numeric(Year) - as.numeric(as.character(  Grade)))
 
 
 ggplot(data = graphthis %>% filter(Year %in% c("2015", "2016" ,"2017","2018", "2019")) , aes(x = Year, y = Percent, group = cohort)) +
