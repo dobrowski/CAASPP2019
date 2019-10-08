@@ -6,6 +6,16 @@ library(ggthemes)
 library(scales)
 library(readxl)
 
+round2 = function(x, digits) {
+  posneg = sign(x)
+  z = abs(x)*10^digits
+  z = z + 0.5
+  z = trunc(z)
+  z = z/10^digits
+  z*posneg
+}
+
+
 ### Load files ------
 
 sbac2015 <- read_delim(here("data", "sb_ca2015_all_27_csv_v3.txt"), delim = ",") %>%
@@ -30,7 +40,7 @@ entities <- read_delim(here("data","sb_ca2019entities_csv.txt"), delim = ",")
 subgroups <- read_delim(here("data","Subgroups.txt"), delim = ",") 
 
 
-
+sbac2019.ca <- read_delim(here("data", "sb_ca2019_1_csv_v2.txt"), delim = ",")
 
 
 
@@ -121,8 +131,8 @@ above.CA <- sbac.all %>%
           `Subgroup ID` == "1")  %>% 
   select(`District Name`, TestID, `Percentage Standard Met and Above.19`) %>%
   spread(key = TestID, value = `Percentage Standard Met and Above.19`) %>%
-  filter(ELA > 50,
-         Math > 39) %>%
+  filter(ELA > 50.87,
+         Math > 39.73) %>%
   mutate(Sentence = paste0(`District Name`, ": ",round(ELA), " percent in English Language Arts/Literacy and ", round(Math), " percent in Mathematics."  )) %>%
   arrange(desc(ELA))
 
@@ -192,12 +202,12 @@ pr1 <- sbac.all %>%
   filter(TestID == "ELA") %>%
   transmute(Grade = Grade,
     `2015` = round(`Percentage Standard Met and Above.15`,digits = 1 ), 
-         `2016` = round(`Percentage Standard Met and Above.16`,digits = 1 ), 
-         `2017` = round(`Percentage Standard Met and Above.17`,digits = 1 ), 
-         `2018` = round(`Percentage Standard Met and Above.18`,digits = 1 ), 
-         `2019` = round(`Percentage Standard Met and Above.19`,digits = 1 ), 
-    `1 Year Growth` = round(OneYrChange,digits = 1 ),
-    `4 Year Growth` = round(FourYrChange,digits = 1 ),
+         `2016` = round2(`Percentage Standard Met and Above.16`,digits = 1 ), 
+         `2017` = round2(`Percentage Standard Met and Above.17`,digits = 1 ), 
+         `2018` = round2(`Percentage Standard Met and Above.18`,digits = 1 ), 
+         `2019` = round2(`Percentage Standard Met and Above.19`,digits = 1 ), 
+    `1 Year Growth` = round2(OneYrChange,digits = 1 ),
+    `4 Year Growth` = round2(FourYrChange,digits = 1 ),
   )
 
 clipr::write_clip(pr1)
@@ -213,13 +223,13 @@ pr2 <- sbac.all %>%
   select(Grade, TestID, starts_with("Percentage Standard Met and Above")  ,OneYrChange, FourYrChange) %>% 
   filter(TestID == "Math") %>%
   transmute(Grade = Grade,
-            `2015` = round(`Percentage Standard Met and Above.15`,digits = 1 ), 
-            `2016` = round(`Percentage Standard Met and Above.16`,digits = 1 ), 
-            `2017` = round(`Percentage Standard Met and Above.17`,digits = 1 ), 
-            `2018` = round(`Percentage Standard Met and Above.18`,digits = 1 ), 
-            `2019` = round(`Percentage Standard Met and Above.19`,digits = 1 ), 
-            `1 Year Growth` = round(OneYrChange,digits = 1 ),
-            `4 Year Growth` = round(FourYrChange,digits = 1 ),
+            `2015` = round2(`Percentage Standard Met and Above.15`,digits = 1 ), 
+            `2016` = round2(`Percentage Standard Met and Above.16`,digits = 1 ), 
+            `2017` = round2(`Percentage Standard Met and Above.17`,digits = 1 ), 
+            `2018` = round2(`Percentage Standard Met and Above.18`,digits = 1 ), 
+            `2019` = round2(`Percentage Standard Met and Above.19`,digits = 1 ), 
+            `1 Year Growth` = round2(OneYrChange,digits = 1 ),
+            `4 Year Growth` = round2(FourYrChange,digits = 1 ),
   )
 
 clipr::write_clip(pr2)
@@ -237,13 +247,13 @@ pr3 <- sbac.all %>%
   filter(TestID == "ELA") %>%
   transmute(`Student Group` = `Student Group`,
             `Demographic Name` = `Demographic Name`,
-            `2015` = round(`Percentage Standard Met and Above.15`,digits = 1 ), 
-            `2016` = round(`Percentage Standard Met and Above.16`,digits = 1 ), 
-            `2017` = round(`Percentage Standard Met and Above.17`,digits = 1 ), 
-            `2018` = round(`Percentage Standard Met and Above.18`,digits = 1 ), 
-            `2019` = round(`Percentage Standard Met and Above.19`,digits = 1 ), 
-            `1 Year Growth` = round(OneYrChange,digits = 1 ),
-            `4 Year Growth` = round(FourYrChange,digits = 1 ),
+            `2015` = round2(`Percentage Standard Met and Above.15`,digits = 1 ), 
+            `2016` = round2(`Percentage Standard Met and Above.16`,digits = 1 ), 
+            `2017` = round2(`Percentage Standard Met and Above.17`,digits = 1 ), 
+            `2018` = round2(`Percentage Standard Met and Above.18`,digits = 1 ), 
+            `2019` = round2(`Percentage Standard Met and Above.19`,digits = 1 ), 
+            `1 Year Growth` = round2(OneYrChange,digits = 1 ),
+            `4 Year Growth` = round2(FourYrChange,digits = 1 ),
   ) %>%
   arrange(`Student Group`, `2019`)
 
@@ -261,13 +271,13 @@ pr4 <- sbac.all %>%
   filter(TestID == "Math") %>%
   transmute(`Student Group` = `Student Group`,
             `Demographic Name` = `Demographic Name`,
-            `2015` = round(`Percentage Standard Met and Above.15`,digits = 1 ), 
-            `2016` = round(`Percentage Standard Met and Above.16`,digits = 1 ), 
-            `2017` = round(`Percentage Standard Met and Above.17`,digits = 1 ), 
-            `2018` = round(`Percentage Standard Met and Above.18`,digits = 1 ), 
-            `2019` = round(`Percentage Standard Met and Above.19`,digits = 1 ), 
-            `1 Year Growth` = round(OneYrChange,digits = 1 ),
-            `4 Year Growth` = round(FourYrChange,digits = 1 ),
+            `2015` = round2(`Percentage Standard Met and Above.15`,digits = 1 ), 
+            `2016` = round2(`Percentage Standard Met and Above.16`,digits = 1 ), 
+            `2017` = round2(`Percentage Standard Met and Above.17`,digits = 1 ), 
+            `2018` = round2(`Percentage Standard Met and Above.18`,digits = 1 ), 
+            `2019` = round2(`Percentage Standard Met and Above.19`,digits = 1 ), 
+            `1 Year Growth` = round2(OneYrChange,digits = 1 ),
+            `4 Year Growth` = round2(FourYrChange,digits = 1 ),
   ) %>%
   arrange(`Student Group`, `2019`)
 

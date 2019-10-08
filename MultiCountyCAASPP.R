@@ -186,12 +186,16 @@ test2 <- sbac2019.hs %>%
                         str_pad(  as.character(`District Code`), width = 5, side = "left", pad = "0"  ) ,
                         str_pad( as.character(`School Code`), width = 7, side = "left", pad = "0"  )  )
     ) %>%
-    left_join(school.EL.FRPM, by = c("cds" = "cds")) 
-
-
-test3 <- test2 %>% 
+    left_join(school.EL.FRPM, by = c("cds" = "cds")) %>% 
     mutate(OneYrChange = `Percentage Standard Met and Above.19`- as.numeric(`Percentage Standard Met and Above.18`),
-           TwoYrChange = `Percentage Standard Met and Above.19`- as.numeric(`Percentage Standard Met and Above.17`)) %>%
+           TwoYrChange = `Percentage Standard Met and Above.19`- as.numeric(`Percentage Standard Met and Above.17`))
+
+
+sf <- test2 %>%
+    filter(str_detect(DistrictName, "Francisco"))
+
+
+test3 <- test2  %>%
     filter(OneYrChange > 0,
            TwoYrChange > 8,
            Charter == "N",
@@ -201,6 +205,9 @@ test3 <- test2 %>%
 #    arrange(desc(TwoYrChange))
    arrange(DistrictName)
     
+
+
+
 
 test3 %>%
     select(`County Code`, DistrictName:TwoYrChange, `Percentage Standard Met and Above.19`) %>%
