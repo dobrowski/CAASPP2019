@@ -121,7 +121,7 @@ table2 <- filtered %>%
   arrange(desc(`School Name`) ,`District Name`, TestID)
   
 
-
+write_csv(table2, "Local Districts Summary.csv")
 
 ### Districts above California -----
 

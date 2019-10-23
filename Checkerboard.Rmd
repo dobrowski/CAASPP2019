@@ -1,0 +1,164 @@
+---
+author: "David Dobrowski"
+date: "10/21/2019"
+output: pdf_document
+always_allow_html: yes
+params: 
+    set_title: "My Title"
+    school: "Roosevelt"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+
+library(tidyverse)
+library(here)
+library(scales)
+library(knitr)
+
+library(kableExtra)
+
+round2 = function(x, digits) {
+  posneg = sign(x)
+  z = abs(x)*10^digits
+  z = z + 0.5
+  z = trunc(z)
+  z = z/10^digits
+  z*posneg
+}
+
+
+pagebreak <- function() {
+  if(knitr::is_latex_output())
+    return("\\newpage")
+  else
+    return('<div style="page-break-before: always;" />')
+}
+
+
+
+sbac.all <- read_rds(here("data", "sbac-all.rds"))
+
+tables <- sbac.all %>%
+    filter(`Demographic ID` == "001") %>% 
+    mutate(ThreeYrChange = `Percentage Standard Met and Above.19` - `Percentage Standard Met and Above.16` ,
+           cds = paste0(`County Code`,`District Code`,`School Code`)) %>%
+    select(cds,
+           `District Name`,
+           `School Name`,
+           Grade,
+           TestID,
+           `Percentage Standard Met and Above.15`,
+           `Percentage Standard Met and Above.16`,
+           `Percentage Standard Met and Above.17`,
+           `Percentage Standard Met and Above.18`,
+           `Percentage Standard Met and Above.19`,
+           OneYrChange,
+           ThreeYrChange)
+
+
+
+```
+
+
+
+
+
+```{r cars}
+
+sbac.all %>%
+    filter(str_detect(`School Name`, params$school),
+           `Demographic ID` == "001",
+           TestID == "Math") %>% 
+    mutate(ThreeYrChange = `Percentage Standard Met and Above.19` - `Percentage Standard Met and Above.16` ) %>%
+    select(`District Name`,
+           `School Name`,
+           Grade,
+           `Percentage Standard Met and Above.15`,
+           `Percentage Standard Met and Above.16`,
+           `Percentage Standard Met and Above.17`,
+           `Percentage Standard Met and Above.18`,
+           `Percentage Standard Met and Above.19`,
+           OneYrChange,
+           ThreeYrChange) %>%
+    kable(# format = "latex",
+          booktabs = T,
+        #  escape = FALSE,
+        #  caption = .$`School Name`[1],
+          col.names = linebreak(c("District",
+                        "School",
+                        "Grade",
+                        "2015",
+                        "2016",
+                        "2017",
+                        "2018",
+                        "2019",
+                        "1 Year",
+                        "3 Years"))
+          )  %>% 
+    add_header_above(c(" " = 3, "Percent Met or Exceeded" = 5, "Change" = 2)) # %>% 
+ #   kable_styling(latex_options = "striped",
+               #   full_width = TRUE
+  #                ) # %>% 
+   # landscape()
+
+
+```
+
+\newpage
+
+
+
+```{r trucks, results='asis',}
+
+cds_list <-unique(tables$cds)[1:5]
+
+for(i in cds_list){
+
+
+tbls <- tables %>%
+    filter(str_detect(cds, i),
+           TestID == "Math") %>% 
+    select(-cds) %>%
+    kable(# format = "latex",
+          booktabs = T,
+        #  escape = FALSE,
+        #  caption = .$`School Name`[1],
+          col.names = (c("District",
+                        "School",
+                        "Grade",
+                        "Test",
+                        "2015",
+                        "2016",
+                        "2017",
+                        "2018",
+                        "2019",
+                        "1 Year",
+                        "3 Years"))
+          )  %>% 
+    add_header_above(c(" " = 4, "Percent Met or Exceeded" = 5, "Change" = 2)) # %>% 
+ #   kable_styling(latex_options = "striped",
+               #   full_width = TRUE
+  #                ) # %>% 
+   # landscape()
+
+print(tbls)
+
+cat("\n")
+
+cat('\\pagebreak')
+
+}
+
+```
+
+
+```{r end}
+
+1+1
+
+```
+
+
+
