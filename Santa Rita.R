@@ -10,8 +10,8 @@ library(scales)
 
 
 test <-   "Math" #  "ELA" # 
-folder <- "test2"
-placename <- "San Antonio"
+folder <- "Spreckles"
+placename <- "Spreckles"
 
 
 bk <- sbac.all %>% 

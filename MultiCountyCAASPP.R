@@ -7,7 +7,7 @@ library(ggthemes)
 library(scales)
 library(readxl)
 
-
+gradelevel <- "6"
 
 sbac2019.multi <- read_delim(here("data", "preview2", "sb_ca2019_all_27_csv_v2.txt"), delim = ",") %>%
     rename_at(vars(-c("County Code", "District Code", "School Code", "Subgroup ID", "Grade", "Test Id")), ~ paste0(., ".19"))  %>%
@@ -34,13 +34,17 @@ for(i in c("01","02","03","04","05","06","07","08","09",10:58)){
                `School Code` = as.character(`School Code`)
                
         ) %>%
-        filter(Grade == "11")
+        filter(Grade == gradelevel)
 
 sbac2019.multi <- bind_rows(sbac2019.multi, sbac2019.load)
     
 }
+
+
+
     
-sbac2017.multi <- read_delim(here("data", "preview2", "sb_ca2017_1_csv_v2.txt"), delim = ",") %>%
+sbac2017.multi <- read_delim(here("data", "preview2", "sb_ca2017_all_csv_v2.txt"), delim = ",",
+                             col_types = "cccccddddddddddddddddddddddddddd") %>%
     rename_at(vars(-c("County Code", "District Code", "School Code", "Subgroup ID", "Grade", "Test Id")), ~ paste0(., ".17"))  %>%
     # mutate(cds = str_c( str_pad(  as.character(`County Code`) , width = 2, side = "left", pad = "0"  ) ,
     #                     str_pad(  as.character(`District Code`), width = 5, side = "left", pad = "0"  ) ,
@@ -53,7 +57,8 @@ sbac2017.multi <- read_delim(here("data", "preview2", "sb_ca2017_1_csv_v2.txt"),
     )
 
 
-sbac2018.multi <- read_delim(here("data", "preview2", "sb_ca2018_1_csv_v3.txt"), delim = ",") %>%
+sbac2018.multi <- read_delim(here("data", "preview2", "sb_ca2018_all_csv_v3.txt"), delim = ",",
+                             col_types = "cccccddddddddddddddddddddddddddd") %>%
     rename_at(vars(-c("County Code", "District Code", "School Code", "Subgroup ID", "Grade", "Test Id")), ~ paste0(., ".18"))  %>%
     # mutate(cds = str_c( str_pad(  as.character(`County Code`) , width = 2, side = "left", pad = "0"  ) ,
     #                     str_pad(  as.character(`District Code`), width = 5, side = "left", pad = "0"  ) ,
@@ -66,12 +71,25 @@ sbac2018.multi <- read_delim(here("data", "preview2", "sb_ca2018_1_csv_v3.txt"),
     )
 
 
+sbac2019.multi <- read_delim(here("data", "preview2", "sb_ca2019_all_csv_v2.txt"), delim = ",",
+                             col_types = "cccccddddddddddddddddddddddddddd") %>%
+    rename_at(vars(-c("County Code", "District Code", "School Code", "Subgroup ID", "Grade", "Test Id")), ~ paste0(., ".19"))  %>%
+    # mutate(cds = str_c( str_pad(  as.character(`County Code`) , width = 2, side = "left", pad = "0"  ) ,
+    #                     str_pad(  as.character(`District Code`), width = 5, side = "left", pad = "0"  ) ,
+    #                     str_pad( as.character(`School Code`), width = 7, side = "left", pad = "0"  )  )
+    # ) 
+    mutate(`District Code` =  as.character( `District Code`),
+           `County Code` = as.character(`County Code`),
+           `School Code` = as.character(`School Code`)
+           
+    )
+
 ### Supplemental Data ----
 
 
 entities <- read_delim(here("data","sb_ca2019entities_csv.txt"), delim = ",") %>%
     mutate(`District Code` =  as.character( `District Code`),
-           `County Code` = as.character(`County Code`),
+           `County Code` = if_else(`County Code` <10, paste0("0",`County Code`) , as.character(`County Code`)),
            `School Code` = as.character(`School Code`)
            
     )
@@ -122,20 +140,32 @@ school.EL.FRPM <- EL.schools %>% left_join(frpm) # %>% mutate(cds = as.numeric(c
 ###  Merge files and massage -----
 
 sbac.all.multi <- list(sbac2019.multi, sbac2018.multi, sbac2017.multi) %>%
-    reduce(left_join, by = "cds") %>% #c("County Code", "District Code", "School Code", "Subgroup ID", "Grade", "Test Id") )%>%
+    reduce(left_join) %>% #c("County Code", "District Code", "School Code", "Subgroup ID", "Grade", "Test Id") )%>%
     left_join(entities, by = c("County Code", "District Code", "School Code")) %>%
     left_join(subgroups, by = c("Subgroup ID" = "Demographic ID Num"  )) %>%
     mutate(TestID = `Test Id` %>% recode(  `1`= "ELA" , `2` = "Math"   )) %>%
     mutate_at(vars(`Total Tested At Entity Level.19`:`Area 4 Percentage Below Standard.17`), list(as.numeric)) %>%
-    mutate(`District Name` = case_when(`District Code` == "00000" ~ "the County",
+    mutate(`District Name` = case_when(`District Code` == "00000" & `County Code` == "00" ~ "California",
+                                       `District Code` == "00000" & `County Code` == "27" ~ "Monterey County",
                                        TRUE ~ `District Name`)) %>%
-    mutate(`School Name` = case_when(`District Code` == "00000" & `School Code` == "0000000" ~ "the County",
+    mutate(`School Name` = case_when(`County Code` == "00" & `District Code` == "00000" & `School Code` == "0000000" ~ "California",
+                                     `County Code` == "27" & `District Code` == "00000" & `School Code` == "0000000" ~ "Monterey County",
                                      `School Code` == "0000000" ~ " District",
                                      TRUE ~ `School Name`)) %>%
     mutate(Grade = case_when(Grade == "13" ~ "Overall",
                              TRUE ~ as.character(Grade))) %>%
     mutate(OneYrChange = `Percentage Standard Met and Above.19`- `Percentage Standard Met and Above.18`,
             TwoYrChange = `Percentage Standard Met and Above.19`- `Percentage Standard Met and Above.17`)
+
+### Denise MAth at State level ----
+
+reduced <- sbac.all.multi %>%
+    filter(`County Code` %in% c("00","27"),
+           `District Code`== "00000",
+           `School Code`== "0000000",
+           TestID == "Math",
+           Grade == "Overall")
+
 
 
 
@@ -159,13 +189,13 @@ sbac2019.hs <- sbac2019.multi %>%
                              TRUE ~ as.character(Grade))) %>%
     # mutate(OneYrChange = `Percentage Standard Met and Above.19`- `Percentage Standard Met and Above.18`,
     #        TwoYrChange = `Percentage Standard Met and Above.19`- `Percentage Standard Met and Above.17`)
-    filter(Grade == "11",
+    filter(Grade == gradelevel,
            TestID == "Math",
            `Subgroup ID` == "1") 
 
 
 sbac2017.hs <- sbac2017.multi %>%
-    filter(Grade == "11") %>%
+    filter(Grade == gradelevel) %>%
     mutate(Grade = case_when(Grade == "13" ~ "Overall",
                              TRUE ~ as.character(Grade))) %>%
     mutate(`District Code` =  as.character( `District Code`),
@@ -174,7 +204,7 @@ sbac2017.hs <- sbac2017.multi %>%
     
 
 sbac2018.hs <- sbac2018.multi %>%
-    filter(Grade == "11") %>%
+    filter(Grade == gradelevel) %>%
     mutate(Grade = case_when(Grade == "13" ~ "Overall",
                              TRUE ~ as.character(Grade))) 
     
@@ -211,6 +241,10 @@ test3 <- test2  %>%
 
 test3 %>%
     select(`County Code`, DistrictName:TwoYrChange, `Percentage Standard Met and Above.19`) %>%
-    write_csv("Statewide high math.csv")
+    write_csv(paste0("Statewide ",gradelevel , " math.csv"))
+
+
+EL.schools %>% filter(str_detect(SchoolName, "Center for Independent Study")) %>% 
+    select(SchoolName, Charter)
 
 ### End ----

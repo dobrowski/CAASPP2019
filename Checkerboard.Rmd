@@ -16,7 +16,6 @@ library(tidyverse)
 library(here)
 library(scales)
 library(knitr)
-
 library(kableExtra)
 
 round2 = function(x, digits) {
@@ -26,14 +25,6 @@ round2 = function(x, digits) {
   z = trunc(z)
   z = z/10^digits
   z*posneg
-}
-
-
-pagebreak <- function() {
-  if(knitr::is_latex_output())
-    return("\\newpage")
-  else
-    return('<div style="page-break-before: always;" />')
 }
 
 
@@ -57,15 +48,13 @@ tables <- sbac.all %>%
            OneYrChange,
            ThreeYrChange)
 
-
-
 ```
 
 
 
 
 
-```{r cars}
+```{r cars, include=FALSE}
 
 sbac.all %>%
     filter(str_detect(`School Name`, params$school),
@@ -112,21 +101,25 @@ sbac.all %>%
 
 ```{r trucks, results='asis',}
 
-cds_list <-unique(tables$cds)[1:5]
+cds_list <-unique(tables$cds)#[10:15]
 
 for(i in cds_list){
 
 
-tbls <- tables %>%
-    filter(str_detect(cds, i),
-           TestID == "Math") %>% 
-    select(-cds) %>%
+tbls_step <- tables %>%
+    filter(str_detect(cds, i)) %>% 
+    select(-cds) 
+
+titl <- paste0(tbls_step[1,1]," - ", tbls_step[1,2])
+
+tbls_math <- tbls_step %>%
+  select(-`District Name`, -`School Name`) %>%
+  filter(TestID == "Math") %>%
     kable(# format = "latex",
           booktabs = T,
         #  escape = FALSE,
-        #  caption = .$`School Name`[1],
-          col.names = (c("District",
-                        "School",
+           caption = paste0(titl," - Math"),    # "For ", .$`School Name`[1]),
+          col.names = (c(
                         "Grade",
                         "Test",
                         "2015",
@@ -137,26 +130,57 @@ tbls <- tables %>%
                         "1 Year",
                         "3 Years"))
           )  %>% 
-    add_header_above(c(" " = 4, "Percent Met or Exceeded" = 5, "Change" = 2)) # %>% 
+    add_header_above(c(" " = 2, "Percent Met or Exceeded" = 5, "Change" = 2)) # %>% 
  #   kable_styling(latex_options = "striped",
                #   full_width = TRUE
   #                ) # %>% 
    # landscape()
 
-print(tbls)
+tbls_ela <- tbls_step %>%
+  select(-`District Name`, -`School Name`) %>%
+  filter(TestID == "ELA") %>%
+    kable(# format = "latex",
+          booktabs = T,
+        #  escape = FALSE,
+           caption = paste0(titl," - ELA"),    # "For ", .$`School Name`[1]),
+          col.names = (c(
+                        "Grade",
+                        "Test",
+                        "2015",
+                        "2016",
+                        "2017",
+                        "2018",
+                        "2019",
+                        "1 Year",
+                        "3 Years"))
+          )  %>% 
+    add_header_above(c(" " = 2, "Percent Met or Exceeded" = 5, "Change" = 2)) # %>% 
 
-cat("\n")
+
+cat("  \n")
+cat("  \n")
+
+
+print("*Based on https://caaspp-elpac.cde.ca.gov/caaspp/")
+
+
+cat("  \n")
+cat("  \n")
+
+
+print(tbls_ela)
+
+cat("  \n")
+
+
+print(tbls_math)
+
+
+cat("  \n")
 
 cat('\\pagebreak')
 
 }
-
-```
-
-
-```{r end}
-
-1+1
 
 ```
 

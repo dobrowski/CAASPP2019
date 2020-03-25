@@ -1,4 +1,6 @@
 
+### Libraries -------
+
 library(tidyverse)
 library(here)
 library(ggrepel)
@@ -734,6 +736,22 @@ table3 <- filtered %>%
   #  filter(OneYrChange > 0) %>%
   select(`District Name`,`School Name`, TestID, frpm, ELpercent, starts_with("Percentage Standard Met and Above")  ,OneYrChange, TwoYrChange) %>%
   arrange(desc(TwoYrChange) ,`District Name`, TestID)
+
+
+
+table4 <- filtered %>% 
+  mutate(TwoYrChange = `Percentage Standard Met and Above.19`- `Percentage Standard Met and Above.17`) %>%
+  filter(TwoYrChange >8,
+#         str_detect(`School Name`, "Middle"),
+   #      !str_detect(`School Name`, "Highland"),
+frpm >.4,
+ELpercent > .1
+         ) %>%
+    filter(OneYrChange > 0) %>%
+  select(`District Name`,`School Name`, TestID, frpm, ELpercent, starts_with("Percentage Standard Met and Above")  ,OneYrChange, TwoYrChange) %>%
+  arrange(desc(TwoYrChange) ,`District Name`, TestID)
+
+clipr::write_clip(table4)
 
 
 temp <- sbac.all %>%
